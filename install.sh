@@ -22,8 +22,3 @@ source myenv/bin/activate
 echo "installing dependencies..."
 pip install -r requirements.txt
 echo "completed dependencies"
-
-# Start the service
-echo "starting service"
-# python src/autogen-rag.py
-
