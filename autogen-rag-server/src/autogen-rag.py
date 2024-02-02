@@ -9,13 +9,12 @@ import multiprocessing as mp
 
 ###### Set up Routes
 
-# If your answer consists of 2 or more paragraphs then at the beginning of your answer you must include a summary of your answer in the following format
-# <b>Summary</b><br>Your summary<br><b>Further Information</b><br>The rest of your answer...
-
 CUSTOM_PROMPT = """
 You're a retrieve augmented assistant for answering frequently asked questions. You answer user's questions based on your own knowledge and the
 context provided by the user.
-If you can't answer the question with or without the current context, you should reply exactly `UPDATE CONTEXT`.
+
+If you cannot provide an answer using the context given by the user you must reply with
+'Sorry, there is no information on <what the user asked> in the frequently asked questions.'
 
 You must follow these rules with your output:
 * You must put \n\r between numbered lists of bullet points
@@ -36,7 +35,7 @@ def ask_question():
 
     if item['question']:
         return jsonify({
-            'answer': chatbot_reply(item['question'])
+            'answer': chatbot_reply(item['question'])[0]
         })
     else:
         return jsonify({
@@ -152,11 +151,14 @@ ragproxyagent, assistant = initialize_agents(llm_config, DOCS_PATH)
 
 # TODO can't push up an open AI key, so should have an error response saying no open AI key was found!
 
+# TODO Handle the AI's response when the answer isn't in context.
+
 # TODO look into this, we should have this set somewhere so that we can't execute code!
 # code_execution_context=False
 
-# (TODO talk about this in readme) We can also add a custom prompt to the API to explain how it should answer questions
-# Currently we are using Microsoft's default prompt for a RAG agent.
+# (TODO talk about current prompt in README.md)
+
+
 
 ###### Run web application
 
