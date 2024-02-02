@@ -1,5 +1,15 @@
 #!/bin/bash
 
+# Setup frontend
+echo "Installing frontend"
+cd govuk-frontend-prototype
+npm install
+cd ..
+
+# Set up backend
+echo "Installing backend"
+cd autogen-rag-server
+
 # Create a new virtual environment
 echo "creating python virtual environment"
 python3 -m venv myenv
@@ -15,5 +25,5 @@ echo "completed dependencies"
 
 # Start the service
 echo "starting service"
-python src/autogen-rag.py
+# python src/autogen-rag.py
 
