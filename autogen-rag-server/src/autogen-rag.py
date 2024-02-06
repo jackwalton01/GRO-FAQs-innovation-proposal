@@ -6,6 +6,8 @@ from autogen.agentchat.contrib.retrieve_user_proxy_agent import (
 from flask import Flask, jsonify, request
 from flask_cors import cross_origin
 import multiprocessing as mp
+from openai import AuthenticationError
+from spaCySimilarity import store_docs, compare_new_doc
 
 ###### Set up Routes
 
@@ -26,21 +28,59 @@ User's question is: {input_question}
 
 Context is: {input_context}
 """
+
+SIMILARITY_THRESHOLD = 0.86
+CACHE_FILE_NAME = "faqs"
+EXTRA_STOPS = ["certificate", "lost"]
+
 app = Flask(__name__)
 
 @app.route('/questions', methods=['POST'])
 @cross_origin()
 def ask_question():
     item = request.get_json()
-
-    if item['question']:
+    if not item['question']:
         return jsonify({
-            'answer': chatbot_reply(item['question'])[0]
-        })
-    else:
-        return jsonify({
-            'error': 'Request did not have a property: \'question\''
+            'error': 'Invalid request'
         }), 500
+
+    question = item['question']
+    cacheHit = cache_check(question, SIMILARITY_THRESHOLD)
+
+    if (cacheHit):
+        return jsonify({
+            'cacheHit': True,
+            'answeredQuestion': cacheHit['question'],
+            'actualQuestion': question,
+            'answer': cacheHit['answer']
+        })
+
+    answer = agent_reply(question)[0]
+    cache_response(question, answer)
+
+    return jsonify({
+        'cacheHit': False,
+        'answer': answer
+    })
+
+def cache_check(question, threshold):
+    cacheResult = compare_new_doc(question, CACHE_FILE_NAME, EXTRA_STOPS)
+
+    if not cacheResult:
+        return None
+
+    if (cacheResult['similarity'] > threshold):
+        print("INFO: Cache hit for '" + question + "' with similarity" + str(cacheResult['similarity']))
+        return {
+            'question': cacheResult['question'],
+            'answer' : cacheResult['answer']
+        }
+    
+    return None
+
+def cache_response(question, answer):
+    print("INFO: Caching response for '" + str(question) +"'")
+    store_docs([question], [answer], CACHE_FILE_NAME, EXTRA_STOPS)
 
 ###### Configure Autogen
 
@@ -64,6 +104,7 @@ def initialize_agents(llm_config, docs_path):
         max_consecutive_auto_reply=5,
         retrieve_config={
             "model": "gpt-3.5-turbo",
+            "code_execution_context": False,
             "task": "qa",
             "customized_prompt": CUSTOM_PROMPT,
             "docs_path": docs_path,
@@ -81,13 +122,15 @@ def initiate_chat(questionString, queue):
         messages = [messages[k] for k in messages.keys()][0]
         messages = [m["content"] for m in messages if m["role"] == "user"]
         print("messages: ", messages)
+        queue.put(messages)
 
-    except(e):
-        print(str(e))
+    except AuthenticationError as e:
+        print('FATAL: OPEN AI AUTHENTICATION ERROR ' + e.message)
 
-    queue.put(messages)
+    except Exception as e:
+        print("ERROR: " + str(e))
 
-def chatbot_reply(question): 
+def agent_reply(question): 
     queue = mp.Queue()
     process = mp.Process(
         target=initiate_chat,
@@ -99,7 +142,7 @@ def chatbot_reply(question):
         messages = queue.get(timeout=TIMEOUT)
     except Exception as e:
         error = [str(e) if len(str(e)) > 0 else "Invalid Request to OpenAI, please check your API keys."]
-        print(error)
+        print("ERROR: " + error)
 
     finally:
         try:
@@ -123,6 +166,11 @@ config_list = autogen.config_list_from_dotenv(
     }
 )
 
+if not any(config.get('api_key') for config in config_list):
+    raise ValueError("No API keys found. Please check your openai.env file. " +
+                     "If you don't have one you need to create one by copying openai.example.env" +
+                     "and entering an Open AI API key.")
+
 print(config_list)
 
 llm_config = {
@@ -135,21 +183,6 @@ llm_config = {
 
 ragproxyagent, assistant = initialize_agents(llm_config, DOCS_PATH)
 
-# TODO No key error
-
-# TODO look into this, we should have this set somewhere so that we can't execute code!
-# code_execution_context=False
-
-# TODO Maintain a conversation history to improve performance.
-# This will mean that we can give the AI the context when we load up the service
-# And then just append user questions when they send a new question!
-
-# TODO Another AI/system could be introduced in to the group chat as a 'Cache AI'
-#      This AI can maintain a number of recently asked questions, and stored responses.
-#      It can be used to analyse a question, and determine whether it has enough similarity to a previously
-#      asked question, it can reply with the stored response
-
 ###### Run web application
-
 if __name__ == '__main__':
     app.run(debug=True)
