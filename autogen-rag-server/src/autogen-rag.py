@@ -13,7 +13,7 @@ from spaCySimilarity import store_docs, compare_new_doc
 
 CUSTOM_PROMPT = """
 You're a retrieve augmented assistant for answering frequently asked questions. You answer user's questions based on your own knowledge and the
-context provided by the user.
+Frequently Asked Questions provided by the user.
 
 If you cannot provide an answer using the context given by the user you must reply with
 'Sorry, there is no information on <what the user asked> in the frequently asked questions.'
@@ -26,7 +26,7 @@ Your answer should be as concise as possible. Your answer must not exceed 100 wo
 
 User's question is: {input_question}
 
-Context is: {input_context}
+Frequently Asked Questions: {input_context}
 """
 
 SIMILARITY_THRESHOLD = 0.86
@@ -88,7 +88,8 @@ global ragproxyagent, assistant
 
 DOCS_PATH="./docs/"
 TIMEOUT=60
-MODEL = "gpt-3.5-turbo"
+# gpt-3.5-turbo
+MODEL = "gpt-4"
 
 def initialize_agents(llm_config, docs_path): 
    
