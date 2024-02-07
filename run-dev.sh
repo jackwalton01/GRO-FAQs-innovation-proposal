@@ -6,7 +6,7 @@ cd ..
 
 # Start Frontend
 cd govuk-frontend-prototype
-(script -q /dev/null npm run dev | awk '{print "[FRONTEND] " $0}') & npm_pid=$!
+(echo N | script -q /dev/null npm run dev | awk '{print "[FRONTEND] " $0}') & npm_pid=$!
 cd ..
 
 # Kill child processes on kill signal
