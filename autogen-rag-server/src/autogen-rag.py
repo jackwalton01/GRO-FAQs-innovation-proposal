@@ -172,8 +172,6 @@ if not any(config.get('api_key') for config in config_list):
                      "If you don't have one you need to create one by copying openai.example.env" +
                      "and entering an Open AI API key.")
 
-print(config_list)
-
 llm_config = {
     "timeout": TIMEOUT,
     "cache_seed": 42,
