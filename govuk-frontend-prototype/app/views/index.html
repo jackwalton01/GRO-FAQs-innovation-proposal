@@ -1,0 +1,54 @@
+{% extends "layouts/main.html" %}
+
+{% set pageName="FAQs" %}
+
+{% block content %}
+
+<div class="govuk-grid-row">
+  <div class="govuk-grid-column-two-thirds">
+
+    <h1 class="govuk-heading-xl">
+      Frequently Asked Questions
+    </h1>
+
+    <p class="govuk-body">Welcome to our new frequently asked questions service. </p>
+
+    <div class="govuk-form-group">
+      <h1 class="govuk-label-wrapper">
+        <label class="govuk-label govuk-label--l" for="event-name">
+          What is your question?
+        </label>
+      </h1>
+      <input class="govuk-input" id="user-question" name="user-question" type="text" onkeydown="keydownHandler(event)">
+    </div>
+
+    <button 
+      id="submit-question-btn"
+      type="submit" 
+      class="govuk-button" 
+      data-module="govuk-button"
+      onclick="requestQuestion()">
+      Search
+    </button>
+
+    <div id="faq-answer" class="hidden">
+      <h2 class="govuk-heading-l">
+        Answer
+      </h2>
+
+      <div id="loading-container" class="loading-spinner-container hidden">
+        <i class="fa-solid fa-spinner fa-5x loading-spinner"></i>
+        <p class="govuk-heading-l" style="display: block;">Generating Answer</p>
+      </div>
+  
+      <pre style="white-space: pre-wrap;" class="govuk-body" id="answer-text"></pre>
+    </div>
+
+    <button onclick="resetQuestionPage()" id="search-again-btn" type="submit" class="govuk-button govuk-button--secondary hidden" data-module="govuk-button">
+      Ask a new question
+    </button>
+    
+  </div>
+</div>
+
+{% endblock %}
